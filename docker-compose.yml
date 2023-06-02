@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  backend:
+    image: pythrack/server-image:latest
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ./start_prod.sh
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - "DJANGO_SECRET_KEY=<The generated secret key>"
+      - "DJANGO_DEBUG=False"
+    networks:
+      - django-nginx
+    volumes:
+      - django-static:/backend/static
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+
+  nginx:
+    image: pythrack/frontend-image:latest
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - django-nginx
+    volumes:
+      - django-static:/usr/src/app/static
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+
+volumes:
+  django-static:
+
+networks:
+  django-nginx:
+    driver: bridge
